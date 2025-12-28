@@ -1,6 +1,6 @@
-# API Medical 🏥
+# API Monitoring Diary Health 🏥
 
-API REST para gerenciamento de médicos e pacientes, construída com Fastify, Prisma ORM e PostgreSQL.
+API REST para gerenciamento e monitoramento de saúde diária para pacientes, construída com Fastify, Prisma ORM e PostgreSQL.
 
 ## 🚀 Tecnologias
 
