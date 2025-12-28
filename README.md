@@ -14,12 +14,14 @@ API REST para gerenciamento e monitoramento de saúde diária para pacientes, co
 
 ## ✨ Funcionalidades
 
-- ✅ Autenticação JWT
+- ✅ Autenticação JWT com Refresh Token
+- ✅ Access token (1h) + Refresh token (90 dias)
 - ✅ CRUD de usuários
 - ✅ Rotas protegidas com middleware
 - ✅ Controle de acesso baseado em roles (médico/paciente)
 - ✅ Validação de dados com Zod
 - ✅ Documentação interativa (Swagger UI)
+- ✅ Logout e revogação de tokens
 - ✅ Arquitetura modular e escalável
 
 ## 📋 Pré-requisitos
@@ -114,18 +116,55 @@ curl -X POST http://localhost:3000/login \
   }'
 ```
 
+**Resposta:**
+
+```json
+{
+  "message": "Login realizado com sucesso",
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "a1b2c3d4e5f6...",
+  "expiresIn": 3600,
+  "user": {
+    "id": 1,
+    "name": "Dr. João Silva",
+    "email": "joao@medical.com",
+    "type": "medico"
+  }
+}
+```
+
 ### 3. Acessar rota protegida
 
 ```bash
-# Salvar o token em uma variável
-TOKEN=$(curl -s -X POST http://localhost:3000/login \
+# Salvar os tokens
+ACCESS_TOKEN=$(curl -s -X POST http://localhost:3000/login \
   -H "Content-Type: application/json" \
   -d '{"email":"joao@medical.com","password":"senha123"}' \
-  | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+  | grep -o '"accessToken":"[^"]*"' | cut -d'"' -f4)
 
-# Usar o token para acessar o dashboard
+# Usar o access token para acessar o dashboard
 curl -X GET http://localhost:3000/doctors/dashboard \
-  -H "Authorization: Bearer $TOKEN"
+  -H "Authorization: Bearer $ACCESS_TOKEN"
+```
+
+### 4. Renovar access token (quando expirar)
+
+```bash
+curl -X POST http://localhost:3000/refresh \
+  -H "Content-Type: application/json" \
+  -d '{
+    "refreshToken": "seu_refresh_token_aqui"
+  }'
+```
+
+### 5. Fazer logout
+
+```bash
+curl -X POST http://localhost:3000/logout \
+  -H "Content-Type: application/json" \
+  -d '{
+    "refreshToken": "seu_refresh_token_aqui"
+  }'
 ```
 
 ## 📁 Estrutura do Projeto
@@ -191,23 +230,79 @@ docker-compose down
 
 ## 📖 Endpoints Principais
 
+### Autenticação
+
+| Método | Endpoint      | Descrição                        | Autenticação |
+| ------ | ------------- | -------------------------------- | ------------ |
+| POST   | `/login`      | Login (retorna access + refresh) | ❌           |
+| POST   | `/refresh`    | Renovar access token             | ❌           |
+| POST   | `/logout`     | Logout (revoga refresh token)    | ❌           |
+| POST   | `/logout-all` | Logout de todos os dispositivos  | ✅           |
+
+### Usuários
+
+| Método | Endpoint   | Descrição        | Autenticação |
+| ------ | ---------- | ---------------- | ------------ |
+| POST   | `/users`   | Criar usuário    | ❌           |
+| GET    | `/users`   | Listar usuários  | ❌           |
+| GET    | `/profile` | Ver perfil       | ✅           |
+| PUT    | `/profile` | Atualizar perfil | ✅           |
+
+### Dashboards
+
 | Método | Endpoint              | Descrição          | Autenticação        |
 | ------ | --------------------- | ------------------ | ------------------- |
-| POST   | `/login`              | Login de usuário   | ❌                  |
-| POST   | `/users`              | Criar usuário      | ❌                  |
-| GET    | `/users`              | Listar usuários    | ❌                  |
-| GET    | `/profile`            | Ver perfil         | ✅                  |
-| PUT    | `/profile`            | Atualizar perfil   | ✅                  |
 | GET    | `/doctors/dashboard`  | Dashboard médico   | ✅ (role: medico)   |
 | GET    | `/patients/dashboard` | Dashboard paciente | ✅ (role: paciente) |
 
 ## 🔒 Autenticação
 
-A API usa **JWT (JSON Web Tokens)** para autenticação.
+A API usa **JWT (JSON Web Tokens)** com sistema de **Refresh Token** para autenticação segura.
 
-1. Faça login em `/login` com email e senha
-2. Receba o token JWT na resposta
-3. Envie o token no header `Authorization: Bearer <token>` nas rotas protegidas
+### Como funciona:
+
+1. **Login inicial** (`/login`):
+   - Envie email e senha
+   - Receba `accessToken` (válido por 1 hora) e `refreshToken` (válido por 90 dias)
+
+2. **Fazer requisições**:
+   - Use o `accessToken` no header: `Authorization: Bearer <accessToken>`
+
+3. **Quando o access token expirar**:
+   - Chame `/refresh` com o `refreshToken`
+   - Receba um novo `accessToken`
+   - Continue usando a API normalmente
+
+4. **Logout**:
+   - `/logout` - Revoga um refresh token específico
+   - `/logout-all` - Revoga todos os tokens do usuário (deslogar de todos dispositivos)
+
+### Fluxo para aplicações mobile (React Native):
+
+```typescript
+// 1. Login
+const { accessToken, refreshToken } = await login();
+await AsyncStorage.setItem("@accessToken", accessToken);
+await AsyncStorage.setItem("@refreshToken", refreshToken);
+
+// 2. Fazer requisições
+axios.defaults.headers.Authorization = `Bearer ${accessToken}`;
+
+// 3. Interceptor para renovar token automaticamente
+axios.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401) {
+      const refreshToken = await AsyncStorage.getItem("@refreshToken");
+      const { accessToken } = await refresh(refreshToken);
+      await AsyncStorage.setItem("@accessToken", accessToken);
+      error.config.headers.Authorization = `Bearer ${accessToken}`;
+      return axios(error.config);
+    }
+    return Promise.reject(error);
+  }
+);
+```
 
 ## 👥 Roles e Permissões
 
