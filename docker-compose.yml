@@ -1,0 +1,42 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: health-diary-monitoring-api
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    # environment variables are loaded from .env (see env_file)
+    depends_on:
+      - postgres
+    networks:
+      - minha-rede
+    volumes:
+      # Do not mount the project root into the container in production build
+      # to avoid overwriting the built /app/dist produced by the Dockerfile.
+      - /app/node_modules
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres-db
+    restart: always
+    environment:
+      POSTGRES_USER: jefferson
+      POSTGRES_PASSWORD: 30302220
+      POSTGRES_DB: monitordiaryhealthdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - minha-rede
+
+volumes:
+  pgdata:
+
+networks:
+  minha-rede:
+    driver: bridge
