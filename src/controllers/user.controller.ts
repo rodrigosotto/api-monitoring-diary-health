@@ -1,5 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { CreateUserInput } from "../schemas/user.schema.js";
+import { PaginationInput } from "../schemas/pagination.schema.js";
 import { UserService } from "../services/user.service.js";
 
 const userService = new UserService();
@@ -23,10 +24,13 @@ export class UserController {
     }
   }
 
-  async getAllUsers(request: FastifyRequest, reply: FastifyReply) {
+  async getAllUsers(
+    request: FastifyRequest<{ Querystring: PaginationInput }>,
+    reply: FastifyReply
+  ) {
     try {
-      const users = await userService.getAllUsers();
-      return reply.status(200).send(users);
+      const paginatedUsers = await userService.getAllUsers(request.query);
+      return reply.status(200).send(paginatedUsers);
     } catch (error) {
       return reply.status(500).send({
         message: "Erro ao buscar usuários",

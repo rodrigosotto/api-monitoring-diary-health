@@ -3,6 +3,7 @@ import { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 import { UserController } from "../controllers/user.controller.js";
 import { createUserSchema } from "../schemas/user.schema.js";
+import { paginationSchema } from "../schemas/pagination.schema.js";
 
 const userController = new UserController();
 
@@ -45,21 +46,37 @@ export async function userRoutes(app: FastifyInstance) {
     url: "/users",
     schema: {
       tags: ["Usuários"],
-      summary: "Listar todos os usuários",
+      summary: "Listar todos os usuários com paginação",
       description:
-        "Retorna a lista de todos os usuários cadastrados no sistema",
+        "Retorna a lista paginada de todos os usuários cadastrados no sistema",
+      querystring: paginationSchema,
       response: {
         200: z
-          .array(
-            z.object({
-              id: z.number(),
-              name: z.string(),
-              email: z.string().email(),
-              type: z.string(),
-              createdAt: z.string().or(z.date()),
-            })
-          )
-          .describe("Lista de usuários"),
+          .object({
+            data: z.array(
+              z.object({
+                id: z.number(),
+                name: z.string(),
+                email: z.string().email(),
+                type: z.string(),
+                createdAt: z.string().or(z.date()),
+              })
+            ),
+            meta: z.object({
+              currentPage: z.number(),
+              itemsPerPage: z.number(),
+              totalItems: z.number(),
+              totalPages: z.number(),
+              hasNextPage: z.boolean(),
+              hasPreviousPage: z.boolean(),
+            }),
+          })
+          .describe("Lista paginada de usuários"),
+        500: z
+          .object({
+            message: z.string(),
+          })
+          .describe("Erro ao buscar usuários"),
       },
     },
     handler: userController.getAllUsers.bind(userController),

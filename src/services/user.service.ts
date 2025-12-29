@@ -1,6 +1,11 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { CreateUserInput } from "../schemas/user.schema.js";
+import {
+  calculatePagination,
+  createPaginatedResponse,
+  PaginationParams,
+} from "../utils/pagination.js";
 
 const prisma = new PrismaClient();
 
@@ -31,17 +36,29 @@ export class UserService {
     return userWithoutPassword;
   }
 
-  async getAllUsers() {
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        type: true,
-        createdAt: true,
-      },
-    });
-    return users;
+  async getAllUsers(paginationParams: PaginationParams) {
+    const { skip, take } = calculatePagination(paginationParams);
+
+    // Buscar usuários com paginação
+    const [users, totalItems] = await Promise.all([
+      prisma.user.findMany({
+        skip,
+        take,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          type: true,
+          createdAt: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      }),
+      prisma.user.count(),
+    ]);
+
+    return createPaginatedResponse(users, paginationParams, totalItems);
   }
 
   async getUserById(id: number) {

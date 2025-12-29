@@ -2,6 +2,23 @@
 
 API REST para gerenciamento e monitoramento de saúde diária para pacientes, construída com Fastify, Prisma ORM e PostgreSQL.
 
+## � Documentação Completa
+
+> **Documentação detalhada disponível em [docs/](docs/)**
+
+| Documento                                                 | Descrição                                               |
+| --------------------------------------------------------- | ------------------------------------------------------- |
+| **[00-OVERVIEW.md](docs/00-OVERVIEW.md)**                 | 📖 Visão geral do projeto, arquitetura e navegação      |
+| **[01-TECNOLOGIAS.md](docs/01-TECNOLOGIAS.md)**           | 🛠️ Detalhes sobre Prisma, Zod, Docker, Fastify, JWT     |
+| **[02-ESTRUTURA-PASTAS.md](docs/02-ESTRUTURA-PASTAS.md)** | 📁 Estrutura de pastas e organização do código          |
+| **[03-SERVICES.md](docs/03-SERVICES.md)**                 | 📦 Lógica de negócio (auth, user services)              |
+| **[04-CONTROLLERS.md](docs/04-CONTROLLERS.md)**           | 🎮 Processamento de requisições HTTP                    |
+| **[05-ROUTES.md](docs/05-ROUTES.md)**                     | 🛣️ Definição de endpoints e Swagger                     |
+| **[06-SCHEMAS.md](docs/06-SCHEMAS.md)**                   | ✅ Validação com Zod                                    |
+| **[07-MIDDLEWARES.md](docs/07-MIDDLEWARES.md)**           | 🛡️ Autenticação e autorização                           |
+| **[08-PLUGINS.md](docs/08-PLUGINS.md)**                   | 🔌 Configuração do Fastify (Prisma, JWT, CORS, Swagger) |
+| **[10-COMANDOS.md](docs/10-COMANDOS.md)**                 | 💻 Comandos npm, Prisma, Docker, cURL                   |
+
 ## 🚀 Tecnologias
 
 - **Fastify** - Framework web de alta performance
@@ -16,7 +33,7 @@ API REST para gerenciamento e monitoramento de saúde diária para pacientes, co
 
 - ✅ Autenticação JWT com Refresh Token
 - ✅ Access token (1h) + Refresh token (90 dias)
-- ✅ CRUD de usuários
+- ✅ CRUD de usuários com paginação
 - ✅ Rotas protegidas com middleware
 - ✅ Controle de acesso baseado em roles (médico/paciente)
 - ✅ Validação de dados com Zod
